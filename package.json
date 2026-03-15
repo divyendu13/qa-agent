@@ -21,6 +21,7 @@
     "@anthropic-ai/sdk": "^0.78.0",
     "@aws-sdk/client-bedrock-runtime": "^3.1009.0",
     "dotenv": "^17.3.1",
-    "playwright": "^1.58.2"
+    "playwright": "^1.58.2",
+    "playwright-extra": "^4.3.6"
   }
 }
