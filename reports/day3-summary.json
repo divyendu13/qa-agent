@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-03-15T07:15:30.674Z",
+  "url": "https://demo.playwright.dev/todomvc",
+  "plan": {
+    "pageDescription": "This page is a demo of TodoMVC, a collection of Todo list applications built with different JavaScript frameworks and libraries. It includes a text input for creating new todos, and a list of todos that can be double-clicked to edit them. The page also includes links to the real TodoMVC website and the creator's Github profile.",
+    "testableActions": [
+      "Creating new todos",
+      "Editing existing todos",
+      "Verifying that todos are correctly displayed",
+      "Checking that double-clicking a todo opens the edit mode",
+      "Validating that the links to TodoMVC and the creator's profile work as expected"
+    ],
+    "nextActions": [
+      {
+        "type": "fill",
+        "selector": "input[placeholder='What needs to be done?']",
+        "value": "Buy milk"
+      },
+      {
+        "type": "press",
+        "selector": "input[placeholder='What needs to be done?']",
+        "key": "Enter"
+      },
+      {
+        "type": "click",
+        "selector": "li.todo-list-item"
+      },
+      {
+        "type": "click",
+        "selector": "a[href='https://todomvc.com/']"
+      },
+      {
+        "type": "click",
+        "selector": "a[href='http://github.com/remojansen/']"
+      }
+    ]
+  },
+  "testFile": "tests/generated/todo.spec.js",
+  "results": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "tests": [
+      {
+        "title": "TodoMVC Demo › Create new todos",
+        "status": "passed",
+        "duration": 332,
+        "error": null
+      },
+      {
+        "title": "TodoMVC Demo › Edit existing todos",
+        "status": "passed",
+        "duration": 361,
+        "error": null
+      },
+      {
+        "title": "TodoMVC Demo › Verify todo display",
+        "status": "passed",
+        "duration": 277,
+        "error": null
+      },
+      {
+        "title": "TodoMVC Demo › Open edit mode on double-click",
+        "status": "passed",
+        "duration": 256,
+        "error": null
+      }
+    ],
+    "rawOutput": "\nRunning 5 tests using 1 worker\n\n  ✓  1 tests/generated/todo.spec.js:8:3 › TodoMVC Demo › Create new todos (332ms)\n  ✓  2 tests/generated/todo.spec.js:14:3 › TodoMVC Demo › Edit existing todos (361ms)\n  ✓  3 tests/generated/todo.spec.js:23:3 › TodoMVC Demo › Verify todo display (277ms)\n  ✓  4 tests/generated/todo.spec.js:29:3 › TodoMVC Demo › Open edit mode on double-click (256ms)\n  ✘  5 tests/generated/todo.spec.js:36:3 › TodoMVC Demo › Verify links (5.3s)\n  ✘  6 tests/generated/todo.spec.js:36:3 › TodoMVC Demo › Verify links (retry #1) (5.4s)\n\n\n  1) tests/generated/todo.spec.js:36:3 › TodoMVC Demo › Verify links ───────────────────────────────\n\n    Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\n    Expected: \u001b[32m\"http://todomvc.com/\"\u001b[39m\n    Received: \u001b[31m\"http\u001b[7ms\u001b[27m://todomvc.com/\"\u001b[39m\n    Timeout:  5000ms\n\n    Call log:\n    \u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n    \u001b[2m    9 × unexpected value \"https://todomvc.com/\"\u001b[22m\n\n\n      36 |   test('Verify links', async ({ page }) => {\n      37 |     await page.click('a[href=\"http://todomvc.com\"]');\n    > 38 |     await expect(page).toHaveURL('http://todomvc.com/');\n         |                        ^\n      39 |     await page.goBack();\n      40 |     await page.click('a[href=\"https://github.com/Microsoft/playwright\"]');\n      41 |     await expect(page).toHaveURL('https://github.com/Microsoft/playwright');\n        at /Users/divyendushukla/Documents/qa-agent/tests/generated/todo.spec.js:38:24\n\n    Error Context: test-results/generated-todo-TodoMVC-Demo-Verify-links/error-context.md\n\n    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────\n\n    Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\n    Expected: \u001b[32m\"http://todomvc.com/\"\u001b[39m\n    Received: \u001b[31m\"http\u001b[7ms\u001b[27m://todomvc.com/\"\u001b[39m\n    Timeout:  5000ms\n\n    Call log:\n    \u001b[2m  - Expect"
+  }
+}

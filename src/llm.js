@@ -56,6 +56,10 @@ Your job is to:
 2. Identify what can be tested here
 3. Return a list of actions to perform next as a JSON object
 
+IMPORTANT: Only plan actions that stay within the target app domain. 
+Never click links that navigate away from the current app.
+Focus only on testing the app's core functionality.
+
 Always return valid JSON in this exact format:
 {
   "pageDescription": "what you see on the page",

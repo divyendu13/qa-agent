@@ -1,0 +1,289 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - img "TodoMVC" [ref=e5]
+        - paragraph [ref=e6]:
+          - text: Helping you
+          - strong [ref=e7]: select
+          - text: an MV* framework
+        - navigation [ref=e8]:
+          - link "Download" [ref=e9] [cursor=pointer]:
+            - /url: https://github.com/tastejs/todomvc/archive/master.zip
+          - link "View on GitHub" [ref=e10] [cursor=pointer]:
+            - /url: https://github.com/tastejs/todomvc
+          - link "Blog" [ref=e11] [cursor=pointer]:
+            - /url: https://medium.com/@tastejs
+      - img "TodoMVC" [ref=e13]
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - heading "Introduction" [level=2] [ref=e16]
+        - paragraph [ref=e17]: Developers have a number of choices today when it comes to selecting a JavaScript framework or UI library for building scalable web apps.
+        - paragraph [ref=e18]: React / Next.js, Vue / Nuxt, Angular…the list of solutions continues to grow, but just how do you decide on which to use in a sea of so many options?
+        - paragraph [ref=e19]: To help you understand the options, we created TodoMVC - a project which has offered the same Todo applications implemented in popular JavaScript frameworks for the last decade.
+        - paragraph [ref=e20]:
+          - text: TodoMVC is useful for comparing syntax and solutions, is officially used in cross-browser benchmarks (e.g.
+          - link "Speedometer" [ref=e21] [cursor=pointer]:
+            - /url: https://browserbench.org/Speedometer3.0/
+          - text: ) and aims to stay up to date as trends change over time.
+        - iframe [ref=e22]:
+          - link "Follow" [ref=f4e4] [cursor=pointer]:
+            - /url: https://twitter.com/intent/follow?original_referer=https%3A%2F%2Ftodomvc.com%2F&ref_src=twsrc%5Etfw%7Ctwcamp%5Ebuttonembed%7Ctwterm%5Efollow%7Ctwgr%5Etastejs&region=follow_link&screen_name=tastejs
+            - generic [ref=f4e6]: Follow
+        - iframe [ref=e23]:
+          - link "Post" [ref=f5e4] [cursor=pointer]:
+            - /url: https://twitter.com/intent/tweet?original_referer=https%3A%2F%2Ftodomvc.com%2F&ref_src=twsrc%5Etfw%7Ctwcamp%5Ebuttonembed%7Ctwterm%5Eshare%7Ctwgr%5E&text=TodoMVC%20-%20Helping%20you%20select%20an%20MV*%20framework%20-%20Todo%20apps%20for%20Backbone.js%2C%20Ember.js%2C%20AngularJS%2C%20and%20more&url=http%3A%2F%2Ftodomvc.com&via=tastejs
+            - generic [ref=f5e6]: Post
+        - iframe [ref=e24]:
+          
+      - generic [ref=e25]:
+        - heading "Examples" [level=2] [ref=e26]
+        - tablist [ref=e27]:
+          - generic [ref=e29]:
+            - tab "JavaScript" [selected] [ref=e30] [cursor=pointer]:
+              - generic [ref=e31]: JavaScript
+            - tab "Compile-to-JS" [ref=e32] [cursor=pointer]:
+              - generic [ref=e33]: Compile-to-JS
+            - tab "Labs" [ref=e34] [cursor=pointer]:
+              - generic [ref=e35]: Labs
+        - generic [ref=e38]:
+          - paragraph [ref=e39]: These are examples written in pure JavaScript.
+          - list [ref=e40]:
+            - listitem [ref=e41]:
+              - link "React New" [ref=e42] [cursor=pointer]:
+                - /url: examples/react/dist/
+                - text: React
+                - generic [ref=e43]: New
+            - listitem [ref=e44]:
+              - link "React Redux New" [ref=e45] [cursor=pointer]:
+                - /url: examples/react-redux/dist
+                - text: React Redux
+                - generic [ref=e46]: New
+            - listitem [ref=e47]:
+              - link "Vue.js New" [ref=e48] [cursor=pointer]:
+                - /url: examples/vue/dist/
+                - text: Vue.js
+                - generic [ref=e49]: New
+            - listitem [ref=e50]:
+              - link "Preact New" [ref=e51] [cursor=pointer]:
+                - /url: examples/preact/dist/
+                - text: Preact
+                - generic [ref=e52]: New
+            - listitem [ref=e53]:
+              - link "Backbone.js New" [ref=e54] [cursor=pointer]:
+                - /url: examples/backbone/dist/
+                - text: Backbone.js
+                - generic [ref=e55]: New
+            - listitem [ref=e56]:
+              - link "Angular New" [ref=e57] [cursor=pointer]:
+                - /url: examples/angular/dist/browser/
+                - text: Angular
+                - generic [ref=e58]: New
+            - listitem [ref=e59]:
+              - link "Ember.js New" [ref=e60] [cursor=pointer]:
+                - /url: examples/emberjs/todomvc/dist/
+                - text: Ember.js
+                - generic [ref=e61]: New
+            - listitem [ref=e62]:
+              - link "Lit New" [ref=e63] [cursor=pointer]:
+                - /url: examples/lit/dist/
+                - text: Lit
+                - generic [ref=e64]: New
+            - listitem [ref=e65]:
+              - link "KnockoutJS" [ref=e66] [cursor=pointer]:
+                - /url: examples/knockoutjs/
+            - listitem [ref=e67]:
+              - link "Dojo" [ref=e68] [cursor=pointer]:
+                - /url: examples/dojo/
+            - listitem [ref=e69]:
+              - link "Knockback.js" [ref=e70] [cursor=pointer]:
+                - /url: examples/knockback/
+            - listitem [ref=e71]:
+              - link "CanJS" [ref=e72] [cursor=pointer]:
+                - /url: examples/canjs/
+            - listitem [ref=e73]:
+              - link "Polymer" [ref=e74] [cursor=pointer]:
+                - /url: examples/polymer/index.html
+            - listitem [ref=e75]:
+              - link "Mithril" [ref=e76] [cursor=pointer]:
+                - /url: examples/mithril/
+            - listitem [ref=e77]:
+              - link "Marionette.js" [ref=e78] [cursor=pointer]:
+                - /url: examples/backbone_marionette/
+        - separator [ref=e79]
+        - heading "Compare these to a non-framework implementation" [level=2] [ref=e80]
+        - list [ref=e81]:
+          - listitem [ref=e82]:
+            - link "JavaScript ES5 New" [ref=e83] [cursor=pointer]:
+              - /url: examples/javascript-es5/dist/
+              - text: JavaScript ES5
+              - generic [ref=e84]: New
+          - listitem [ref=e85]:
+            - link "JavaScript ES6 New" [ref=e86] [cursor=pointer]:
+              - /url: examples/javascript-es6/dist/
+              - text: JavaScript ES6
+              - generic [ref=e87]: New
+          - listitem [ref=e88]:
+            - link "jQuery New" [ref=e89] [cursor=pointer]:
+              - /url: examples/jquery/dist/
+              - text: jQuery
+              - generic [ref=e90]: New
+          - listitem [ref=e91]:
+            - link "Web Components New" [ref=e92] [cursor=pointer]:
+              - /url: examples/web-components/dist/
+              - text: Web Components
+              - generic [ref=e93]: New
+        - separator [ref=e94]
+        - list [ref=e95]:
+          - listitem [ref=e96]:
+            - generic [ref=e97]: New
+            - text: = New or updated app
+    - separator [ref=e98]
+    - generic [ref=e99]:
+      - generic [ref=e100]:
+        - blockquote [ref=e101]:
+          - paragraph [ref=e102]: “ TodoMVC is a godsend for helping developers find what well-developed frameworks match their mental model of application architecture. ”
+          - contentinfo [ref=e103]:
+            - text: —
+            - link "Paul Irish" [ref=e104] [cursor=pointer]:
+              - /url: https://github.com/paulirish
+        - text: “ ” — “ ” — “ ” —
+      - img "Todo app screenshot" [ref=e106]
+    - separator [ref=e107]
+    - generic [ref=e108]:
+      - generic [ref=e109]:
+        - heading "New in 1.4" [level=2] [ref=e110]
+        - list [ref=e111]:
+          - listitem [ref=e112]:
+            - text: ✔
+            - heading "New Additions ✨" [level=4] [ref=e113]
+            - generic [ref=e114]:
+              - paragraph [ref=e115]: To stay representative of frameworks & language features used on the web, we added a few new example apps.
+              - generic [ref=e116] [cursor=pointer]: Examples ▼
+              - list:
+                - listitem [ref=e117]:
+                  - text: ✔
+                  - link "Angular 17" [ref=e118] [cursor=pointer]:
+                    - /url: examples/angular/dist/browser/
+                - listitem [ref=e119]:
+                  - text: ✔
+                  - link "Lit" [ref=e120] [cursor=pointer]:
+                    - /url: examples/lit/dist/
+                - listitem [ref=e121]:
+                  - text: ✔
+                  - link "Preact" [ref=e122] [cursor=pointer]:
+                    - /url: examples/preact/dist/
+                - listitem [ref=e123]:
+                  - text: ✔
+                  - link "React Redux" [ref=e124] [cursor=pointer]:
+                    - /url: examples/react-redux/dist/
+                - listitem [ref=e125]:
+                  - text: ✔
+                  - link "Svelte" [ref=e126] [cursor=pointer]:
+                    - /url: examples/svelte/dist/
+                - listitem [ref=e127]:
+                  - text: ✔
+                  - link "Web Components" [ref=e128] [cursor=pointer]:
+                    - /url: examples/web-components/dist/
+          - listitem [ref=e129]:
+            - text: ✔
+            - heading "Updated Versions 🧹" [level=4] [ref=e130]
+            - generic [ref=e131]:
+              - paragraph [ref=e132]: Some updates to examples that were out-of-date, but still widely used on the web.
+              - generic [ref=e133] [cursor=pointer]: Examples ▼
+              - list:
+                - listitem [ref=e134]:
+                  - text: ✔
+                  - link "Backbone" [ref=e135] [cursor=pointer]:
+                    - /url: examples/backbone/dist/
+                - listitem [ref=e136]:
+                  - text: ✔
+                  - link "Ember" [ref=e137] [cursor=pointer]:
+                    - /url: examples/emberjs/todomvc/dist/
+                - listitem [ref=e138]:
+                  - text: ✔
+                  - link "jQuery" [ref=e139] [cursor=pointer]:
+                    - /url: examples/jquery/dist/
+                - listitem [ref=e140]:
+                  - text: ✔
+                  - link "React" [ref=e141] [cursor=pointer]:
+                    - /url: examples/react/dist/
+                - listitem [ref=e142]:
+                  - text: ✔
+                  - link "Vue" [ref=e143] [cursor=pointer]:
+                    - /url: examples/vue/dist/
+                - listitem [ref=e144]:
+                  - text: ✔
+                  - link "JavaScript ES5" [ref=e145] [cursor=pointer]:
+                    - /url: examples/javascript-es5/
+                - listitem [ref=e146]:
+                  - text: ✔
+                  - link "JavaScript ES6" [ref=e147] [cursor=pointer]:
+                    - /url: examples/javascript-es6/
+          - listitem [ref=e148]: ✔ Misc. updates to the homepage.
+      - generic [ref=e149]:
+        - heading "Selecting a Framework" [level=2] [ref=e150]
+        - paragraph [ref=e151]: Once you've downloaded the latest release and played around with the apps, you'll want to decide on a specific framework to try out.
+        - paragraph [ref=e152]: Study the syntax required for defining models, views and (where applicable) controllers and classes in the frameworks you're interested in and try your hand at editing the code to see how it feels using it first-hand.
+        - paragraph [ref=e153]: Please ensure that if you're happy with this, you do spend more time investigating the framework (including reading the official docs, the source and its complete feature list). There's often a lot more to a framework than what we present in our examples.
+      - generic [ref=e154]:
+        - heading "Getting Involved" [level=2] [ref=e155]
+        - paragraph [ref=e156]: Is there a bug we haven't fixed or an MV* framework you feel would benefit from being included in TodoMVC?
+        - paragraph [ref=e157]:
+          - text: If so, feel free to fork the repo, read our
+          - link "contribution guidelines" [ref=e158] [cursor=pointer]:
+            - /url: https://github.com/tastejs/todomvc/wiki
+          - text: ", and submit a pull request — we'll be happy to review it for inclusion."
+        - paragraph [ref=e159]:
+          - text: Make sure you use the
+          - link "template" [ref=e160] [cursor=pointer]:
+            - /url: https://github.com/tastejs/todomvc-app-template
+          - text: as a starting point and read the
+          - link "app specification" [ref=e161] [cursor=pointer]:
+            - /url: https://github.com/tastejs/todomvc/blob/master/app-spec.md
+          - text: .
+        - paragraph [ref=e162]:
+          - link "Submit Pull Request »" [ref=e163] [cursor=pointer]:
+            - /url: https://github.com/tastejs/todomvc/wiki
+    - separator [ref=e164]
+    - contentinfo [ref=e165]:
+      - paragraph [ref=e166]:
+        - text: Brought to you by
+        - link "Addy OsmaniAddy" [ref=e167] [cursor=pointer]:
+          - /url: https://github.com/addyosmani
+          - img "Addy Osmani" [ref=e168]
+          - text: Addy
+        - link "Sindre SorhusSindre" [ref=e169] [cursor=pointer]:
+          - /url: https://github.com/sindresorhus
+          - img "Sindre Sorhus" [ref=e170]
+          - text: Sindre
+        - link "Pascal HartigPascal" [ref=e171] [cursor=pointer]:
+          - /url: https://github.com/passy
+          - img "Pascal Hartig" [ref=e172]
+          - text: Pascal
+        - link "Stephen SawchukStephen" [ref=e173] [cursor=pointer]:
+          - /url: https://github.com/stephenplusplus
+          - img "Stephen Sawchuk" [ref=e174]
+          - text: Stephen
+        - link "Colin EberhardtColin" [ref=e175] [cursor=pointer]:
+          - /url: https://github.com/colineberhardt
+          - img "Colin Eberhardt" [ref=e176]
+          - text: Colin
+        - link "Arthur VerschaeveArthur" [ref=e177] [cursor=pointer]:
+          - /url: https://github.com/arthurvr
+          - img "Arthur Verschaeve" [ref=e178]
+          - text: Arthur
+        - link "Sam SacconeSam" [ref=e179] [cursor=pointer]:
+          - /url: https://github.com/samccone
+          - img "Sam Saccone" [ref=e180]
+          - text: Sam
+        - link "Sam SacconeFady" [ref=e181] [cursor=pointer]:
+          - /url: https://github.com/FadySamirSadek
+          - img "Sam Saccone" [ref=e182]
+          - text: Fady
+  - iframe [ref=e183]:
+    
+```
