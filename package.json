@@ -1,0 +1,26 @@
+{
+  "name": "qa-agent",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/divyendu13/qa-agent#readme",
+  "bugs": {
+    "url": "https://github.com/divyendu13/qa-agent/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/divyendu13/qa-agent.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1009.0",
+    "dotenv": "^17.3.1",
+    "playwright": "^1.58.2"
+  }
+}
