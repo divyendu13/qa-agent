@@ -35,38 +35,34 @@ export async function runTests(specFile) {
   }
 }
 
-function parseTextResults(output, allPassed) {
+function parseTextResults(output) {
   const tests = [];
-
-  // Parse individual test lines from --reporter=list output
-  // Format: "    ✓  1 [chromium] › todo.spec.js:10:3 › TodoMVC › add todo (1234ms)"
   const lines = output.split('\n');
-  lines.forEach(line => {
-    const passMatch = line.match(/✓|passed/);
-    const failMatch = line.match(/✗|×|failed|F /);
-    const titleMatch = line.match(/›\s+(.+?)\s+\((\d+)ms\)/);
 
-    if (titleMatch) {
-      tests.push({
-        title: titleMatch[1].trim(),
-        status: failMatch ? 'failed' : 'passed',
-        duration: parseInt(titleMatch[2]),
-        error: null
-      });
+  lines.forEach(line => {
+    // Match:  ✓  1 [chromium] › file.spec.js:10:3 › Suite › test name (123ms)
+    const passLine = line.match(/[✓+]\s+\d*\s*\[.*?\].*?›\s+(.+?)\s+\((\d+)ms\)/);
+    const failLine = line.match(/[✗×]\s+\d*\s*\[.*?\].*?›\s+(.+?)\s+\((\d+)ms\)/);
+
+    if (passLine) {
+      tests.push({ title: passLine[1].trim(), status: 'passed', duration: parseInt(passLine[2]), error: null });
+    } else if (failLine) {
+      tests.push({ title: failLine[1].trim(), status: 'failed', duration: parseInt(failLine[2]), error: null });
     }
   });
 
-  // Parse summary line: "5 passed (12s)" or "3 passed, 2 failed"
+  // Capture error messages for failed tests
+  lines.forEach((line, i) => {
+    if (line.includes('Error:') || line.includes('Timeout')) {
+      const failedTest = tests.find(t => t.status === 'failed' && !t.error);
+      if (failedTest) failedTest.error = line.trim().slice(0, 200);
+    }
+  });
+
   const passedMatch = output.match(/(\d+)\s+passed/);
   const failedMatch = output.match(/(\d+)\s+failed/);
-  const passed = parseInt(passedMatch?.[1] || 0);
-  const failed = parseInt(failedMatch?.[1] || 0);
+  const passed = parseInt(passedMatch?.[1] || tests.filter(t => t.status === 'passed').length);
+  const failed = parseInt(failedMatch?.[1] || tests.filter(t => t.status === 'failed').length);
 
-  return {
-    passed,
-    failed,
-    total: passed + failed,
-    tests,
-    rawOutput: output.slice(0, 2000) // cap for readability
-  };
+  return { passed, failed, total: passed + failed, tests, rawOutput: output.slice(0, 3000) };
 }

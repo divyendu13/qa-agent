@@ -1,43 +1,48 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('TodoMVC Demo', () => {
+test.describe('TodoMVC tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('https://demo.playwright.dev/todomvc/');
   });
 
-  test('Create new todos', async ({ page }) => {
-    await page.locator('.new-todo').fill('Buy groceries');
-    await page.locator('.new-todo').press('Enter');
-    await expect(page.locator('.todo-list li label')).toHaveText('Buy groceries');
+  test('Add new todos', async ({ page }) => {
+    await page.locator('.new-todo').fill('Buy milk');
+    await page.keyboard.press('Enter');
+    expect(page.locator('.todo-list li label')).toHaveText('Buy milk');
+
+    await page.locator('.new-todo').fill('Clean the house');
+    await page.keyboard.press('Enter');
+    expect(page.locator('.todo-list li')).toHaveCount(2);
+    expect(page.locator('.todo-list li label')).toHaveText(['Buy milk', 'Clean the house']);
   });
 
   test('Edit existing todos', async ({ page }) => {
-    await page.locator('.new-todo').fill('Buy milk');
-    await page.locator('.new-todo').press('Enter');
-    await page.locator('.todo-list li label').dblclick();
-    await page.locator('.todo-list li .edit').fill('Buy almond milk');
-    await page.locator('.todo-list li .edit').press('Enter');
-    await expect(page.locator('.todo-list li label')).toHaveText('Buy almond milk');
-  });
-
-  test('Verify todo display', async ({ page }) => {
-    await page.locator('.new-todo').fill('Finish Playwright tutorial');
-    await page.locator('.new-todo').press('Enter');
-    await expect(page.locator('.todo-list li label')).toHaveText('Finish Playwright tutorial');
-  });
-
-  test('Open edit mode on double-click', async ({ page }) => {
     await page.locator('.new-todo').fill('Learn Playwright');
-    await page.locator('.new-todo').press('Enter');
-    await page.locator('.todo-list li label').dblclick();
-    await expect(page.locator('.todo-list li .edit')).toBeVisible();
+    await page.keyboard.press('Enter');
+
+    await page.locator('.todo-list li label').first().dblclick();
+    await page.locator('.todo-list li .edit').first().fill('Learn Playwright with Playwright');
+    await page.keyboard.press('Enter');
+
+    expect(page.locator('.todo-list li label')).toHaveText('Learn Playwright with Playwright');
   });
 
-  test('Verify links', async ({ page }) => {
-    await page.click('a[href="http://todomvc.com"]');
-    await expect(page).toHaveURL('http://todomvc.com/');
-    await page.goBack();
-    await page.click('a[href="https://github.com/Microsoft/playwright"]');
-    await expect(page).toHaveURL('https://github.com/Microsoft/playwright');
+  test('Verify double-click opens todo for editing', async ({ page }) => {
+    await page.locator('.new-todo').fill('Finish the report');
+    await page.keyboard.press('Enter');
+
+    await page.locator('.todo-list li label').first().dblclick();
+    expect(page.locator('.todo-list li .edit')).toBeVisible();
+  });
+
+  test('Verify "Created by" and "Part of" links', async ({ page }) => {
+    await expect(page.locator('a[href="http://todomvc.com/"]')).toHaveAttribute('href', 'http://todomvc.com/');
+    await expect(page.locator('a[href="https://github.com/tastejs/todomvc"]')).toHaveAttribute('href', 'https://github.com/tastejs/todomvc');
+  });
+  
+  test('intentional failure — wrong selector', async ({ page }) => {
+    await page.locator('.non-existent-input-xyz').fill('This will fail');
+    await page.locator('.non-existent-input-xyz').press('Enter');
+    await expect(page.locator('.broken-selector-abc')).toHaveText('This will fail');
   });
 });
