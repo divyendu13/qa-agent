@@ -22,6 +22,9 @@ Rules:
 - Add expect assertions after every action
 - Do NOT use data-testid selectors for this app — it does not have them
 - Do NOT use arbitrary timeouts
+- NEVER write tests that click external links or test hrefs pointing outside the app domain
+- NEVER use expect(page.url()).toBe() for external URLs
+- Focus ONLY on the app's core functionality: adding, editing, completing, deleting todos
 - Return ONLY the raw JavaScript code — no markdown, no explanation, no code fences`;
 
   const userMessage = `Generate a complete Playwright test file for this web page.

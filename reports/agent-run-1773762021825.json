@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-03-17T15:40:21.825Z",
+  "url": "https://demo.playwright.dev/todomvc",
+  "mode": "functional",
+  "steps": [
+    {
+      "step": 1,
+      "skill": "browse",
+      "reason": "Need to navigate to the page and read the content before generating tests",
+      "status": "success",
+      "summary": "Browsed https://demo.playwright.dev/todomvc. Found 5 testable actions: Add new todos, Edit existing todos, Verify that todos are displayed correctly"
+    }
+  ],
+  "plan": {
+    "pageDescription": "This is a demo of TodoMVC, a collection of To-Do list implementations in various JavaScript frameworks. The page displays a simple To-Do list interface with an input field to add new todos, and a list of existing todos that can be double-clicked to edit.",
+    "testableActions": [
+      "Add new todos",
+      "Edit existing todos",
+      "Verify that todos are displayed correctly",
+      "Verify that todos can be marked as complete/incomplete",
+      "Verify that the 'Created by' and 'Part of' links work as expected"
+    ],
+    "nextActions": [
+      {
+        "type": "fill",
+        "selector": "input[placeholder='What needs to be done?']",
+        "value": "Buy groceries"
+      },
+      {
+        "type": "press",
+        "selector": "input[placeholder='What needs to be done?']",
+        "key": "Enter"
+      },
+      {
+        "type": "dblclick",
+        "selector": "[data-todo-id='0']"
+      },
+      {
+        "type": "fill",
+        "selector": "[data-todo-id='0'] input",
+        "value": "Clean the house"
+      },
+      {
+        "type": "press",
+        "selector": "[data-todo-id='0'] input",
+        "key": "Enter"
+      },
+      {
+        "type": "click",
+        "selector": "[data-todo-id='0'] .toggle"
+      },
+      {
+        "type": "click",
+        "selector": "a[href='http://github.com/remojansen/']"
+      },
+      {
+        "type": "click",
+        "selector": "a[href='http://todomvc.com/']"
+      }
+    ]
+  },
+  "testResults": null,
+  "triage": null
+}

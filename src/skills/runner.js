@@ -40,29 +40,45 @@ function parseTextResults(output) {
   const lines = output.split('\n');
 
   lines.forEach(line => {
-    // Match:  ✓  1 [chromium] › file.spec.js:10:3 › Suite › test name (123ms)
-    const passLine = line.match(/[✓+]\s+\d*\s*\[.*?\].*?›\s+(.+?)\s+\((\d+)ms\)/);
-    const failLine = line.match(/[✗×]\s+\d*\s*\[.*?\].*?›\s+(.+?)\s+\((\d+)ms\)/);
+    // Matches:  ✓  1 tests/generated/file.spec.js:8:3 › Suite › Test name (540ms)
+    // Matches:  ✘  3 tests/generated/file.spec.js:24:3 › Suite › Test name (1.4s)
+    const match = line.match(/^\s+([✓✘])\s+\d+\s+\S+\s+›\s+(.+?)\s+\([\d.]+(?:ms|s)\)/);
+    if (!match) return;
 
-    if (passLine) {
-      tests.push({ title: passLine[1].trim(), status: 'passed', duration: parseInt(passLine[2]), error: null });
-    } else if (failLine) {
-      tests.push({ title: failLine[1].trim(), status: 'failed', duration: parseInt(failLine[2]), error: null });
+    const passed = match[1] === '✓';
+    const fullTitle = match[2].trim();
+
+    // Strip "retry #N" lines — don't double count
+    if (fullTitle.includes('retry #')) return;
+
+    // Strip suite prefix — keep only the test name after last ›
+    const parts = fullTitle.split('›');
+    const title = parts[parts.length - 1].trim();
+
+    tests.push({
+      title,
+      status: passed ? 'passed' : 'failed',
+      duration: 0,
+      error: null
+    });
+  });
+
+  // Attach error messages to failed tests
+  let currentFailed = null;
+  lines.forEach(line => {
+    const failMatch = line.match(/^\s+\d+\)\s+.+›\s+(.+)$/);
+    if (failMatch) {
+      const title = failMatch[1].trim().split('›').pop().trim();
+      currentFailed = tests.find(t => t.status === 'failed' && t.title === title);
+    }
+    if (currentFailed && line.trim().startsWith('Error:')) {
+      currentFailed.error = line.trim().slice(0, 200);
+      currentFailed = null;
     }
   });
 
-  // Capture error messages for failed tests
-  lines.forEach((line, i) => {
-    if (line.includes('Error:') || line.includes('Timeout')) {
-      const failedTest = tests.find(t => t.status === 'failed' && !t.error);
-      if (failedTest) failedTest.error = line.trim().slice(0, 200);
-    }
-  });
-
-  const passedMatch = output.match(/(\d+)\s+passed/);
-  const failedMatch = output.match(/(\d+)\s+failed/);
-  const passed = parseInt(passedMatch?.[1] || tests.filter(t => t.status === 'passed').length);
-  const failed = parseInt(failedMatch?.[1] || tests.filter(t => t.status === 'failed').length);
+  const passed = tests.filter(t => t.status === 'passed').length;
+  const failed = tests.filter(t => t.status === 'failed').length;
 
   return { passed, failed, total: passed + failed, tests, rawOutput: output.slice(0, 3000) };
 }

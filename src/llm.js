@@ -9,6 +9,45 @@ const client = new BedrockRuntimeClient({
   }
 });
 
+export async function decideNextAction(agentState) {
+  const systemPrompt = `You are an autonomous QA agent orchestrator.
+You have access to these skills:
+- browse: navigate a URL and read page content
+- generate: write Playwright tests based on page analysis  
+- run: execute the generated test file
+- triage: diagnose test failures and suggest fixes
+- done: signal that the task is complete
+
+Given the current agent state, decide the NEXT single action to take.
+Return ONLY valid JSON in this exact format — no markdown, no explanation:
+{
+  "skill": "one of: browse | generate | run | triage | done",
+  "reason": "one sentence explaining why",
+  "params": {}
+}`;
+
+  const userMessage = `Current agent state:
+URL: ${agentState.url}
+Mode: ${agentState.mode}
+Steps completed: ${agentState.steps.map(s => `${s.skill} (${s.status})`).join(' → ') || 'none yet'}
+Last result summary: ${agentState.lastResult || 'none'}
+Test results so far: ${agentState.testResults ? `${agentState.testResults.passed} passed, ${agentState.testResults.failed} failed` : 'not run yet'}
+
+Decide the next skill to call. If all necessary skills have run successfully, return "done".`;
+
+  const raw = await sendMessage(systemPrompt, userMessage);
+  const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+try {
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON found');
+  return JSON.parse(jsonMatch[0]);
+} catch(e) {
+  console.log('[agent] JSON parse error in decideNextAction, defaulting to done');
+  return { skill: 'done', reason: 'Parse error — ending loop', params: {} };
+}
+}
+
 export async function sendMessage(systemPrompt, userMessage, retries = 3) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -43,7 +82,6 @@ export async function sendMessage(systemPrompt, userMessage, retries = 3) {
 }
 
 export async function analyzePageAndPlan(pageContent) {
-  // ✅ trimmedContent lives HERE — inside the function where pageContent exists
   const trimmedContent = {
     text: pageContent.text.slice(0, 1500),
     interactive: pageContent.interactive.slice(0, 10)
@@ -51,19 +89,14 @@ export async function analyzePageAndPlan(pageContent) {
 
   const systemPrompt = `You are a senior QA engineer operating a browser autonomously.
 You will be given the visible text and interactive elements of a web page.
-Your job is to:
-1. Describe what the page is showing
-2. Identify what can be tested here
-3. Return a list of actions to perform next as a JSON object
 
-IMPORTANT: Only plan actions that stay within the target app domain. 
-Never click links that navigate away from the current app.
-Focus only on testing the app's core functionality.
+Return ONLY a valid JSON object — no preamble, no explanation, no markdown.
+Start your response with { and end with }.
 
-Always return valid JSON in this exact format:
+Required format:
 {
   "pageDescription": "what you see on the page",
-  "testableActions": ["list of things worth testing"],
+  "testableActions": ["action 1", "action 2", "action 3"],
   "nextActions": [
     { "type": "fill", "selector": "CSS selector", "value": "text to type" },
     { "type": "click", "selector": "CSS selector" },
@@ -71,19 +104,35 @@ Always return valid JSON in this exact format:
   ]
 }`;
 
-  const userMessage = `Here is the current page state:
+  const userMessage = `Analyze this page and return JSON only.
 
 VISIBLE TEXT:
 ${trimmedContent.text}
 
 INTERACTIVE ELEMENTS (top 10):
-${JSON.stringify(trimmedContent.interactive, null, 2)}
-
-Analyze this page and return your plan as JSON.`;
+${JSON.stringify(trimmedContent.interactive, null, 2)}`;
 
   const raw = await sendMessage(systemPrompt, userMessage);
 
-  // Strip markdown code fences if LLM wraps in them
-  const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-  return JSON.parse(cleaned);
+  // Robust JSON extraction — finds the first { ... } block in the response
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.log('[llm] no JSON found in response, using fallback plan');
+    return {
+      pageDescription: 'Page could not be analyzed',
+      testableActions: ['Add a new item', 'Edit an existing item', 'Delete an item'],
+      nextActions: []
+    };
+  }
+
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch(e) {
+    console.log('[llm] JSON parse failed, using fallback plan');
+    return {
+      pageDescription: 'Page analysis parse error',
+      testableActions: ['Add a new item', 'Edit an existing item', 'Delete an item'],
+      nextActions: []
+    };
+  }
 }
