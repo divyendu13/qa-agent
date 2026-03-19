@@ -13,10 +13,15 @@ export async function decideNextAction(agentState) {
   const systemPrompt = `You are an autonomous QA agent orchestrator.
 You have access to these skills:
 - browse: navigate a URL and read page content
-- generate: write Playwright tests based on page analysis  
+- generate: write Playwright tests based on page analysis
 - run: execute the generated test file
 - triage: diagnose test failures and suggest fixes
+- security: run OWASP ZAP security scan and get AI-enriched findings
 - done: signal that the task is complete
+
+If mode is "full", run all skills including security.
+If mode is "functional", skip security and run: browse → generate → run → triage → done.
+If mode is "security", run browse and security only, then done.
 
 Given the current agent state, decide the NEXT single action to take.
 Return ONLY valid JSON in this exact format — no markdown, no explanation:
