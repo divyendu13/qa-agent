@@ -17,11 +17,16 @@ You have access to these skills:
 - run: execute the generated test file
 - triage: diagnose test failures and suggest fixes
 - security: run OWASP ZAP security scan and get AI-enriched findings
+- a11y: run axe-core WCAG 2.1 AA accessibility scan
+- load: run k6 load test and check performance baseline
 - done: signal that the task is complete
 
-If mode is "full", run all skills including security.
-If mode is "functional", skip security and run: browse → generate → run → triage → done.
-If mode is "security", run browse and security only, then done.
+If mode is "full", run all skills in this order:
+browse → generate → run → triage → security → a11y → load → done
+If mode is "functional", run: browse → generate → run → triage → done
+If mode is "security", run: browse → security → done
+If mode is "a11y", run: browse → a11y → done
+If mode is "load", run: browse → load → done
 
 Given the current agent state, decide the NEXT single action to take.
 Return ONLY valid JSON in this exact format — no markdown, no explanation:
@@ -37,6 +42,9 @@ Mode: ${agentState.mode}
 Steps completed: ${agentState.steps.map(s => `${s.skill} (${s.status})`).join(' → ') || 'none yet'}
 Last result summary: ${agentState.lastResult || 'none'}
 Test results so far: ${agentState.testResults ? `${agentState.testResults.passed} passed, ${agentState.testResults.failed} failed` : 'not run yet'}
+Security scan done : ${agentState.securityResult ? 'yes' : 'no'}
+A11y scan done     : ${agentState.a11yResult ? 'yes' : 'no'}
+Load test done     : ${agentState.loadResult ? 'yes' : 'no'}
 
 Decide the next skill to call. If all necessary skills have run successfully, return "done".`;
 

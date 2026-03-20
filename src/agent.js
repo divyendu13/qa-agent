@@ -4,6 +4,8 @@ import { generateTestFile } from './skills/generate.js';
 import { runTests } from './skills/runner.js';
 import { triageFailures, formatTriageReport } from './skills/triage.js';
 import { runSecurityScan, formatSecurityReport } from './skills/security.js';
+import { runAccessibilityScan, formatA11yReport } from './skills/accessibility.js';
+import { runLoadTest, formatLoadReport } from './skills/load-test.js';
 import fs from 'fs';
 
 // ── Parse CLI args ───────────────────────────────────
@@ -29,6 +31,8 @@ const agentState = {
     testResults: null,
     triageResult: null,
     securityResult: null,
+    a11yResult: null,
+    loadResult: null,
 };
 
 // ── Skill execution map ──────────────────────────────
@@ -98,6 +102,26 @@ async function executeSkill(skill, params) {
             return { status: 'success', summary };
         }
 
+        case 'a11y': {
+            console.log('[agent] skill: a11y');
+            agentState.a11yResult = await runAccessibilityScan({ targetUrl: agentState.url });
+            const summary = agentState.a11yResult.summary;
+            console.log(`[agent] ${summary}`);
+            return { status: 'success', summary };
+        }
+
+        case 'load': {
+            console.log('[agent] skill: load');
+            agentState.loadResult = await runLoadTest({
+                targetUrl: agentState.url,
+                vus: 10,
+                duration: '30s'
+            });
+            const summary = agentState.loadResult.summary;
+            console.log(`[agent] ${summary}`);
+            return { status: 'success', summary };
+        }
+
         default:
             return { status: 'unknown', summary: `Unknown skill: ${skill}` };
     }
@@ -115,6 +139,8 @@ function saveReport() {
         testResults: agentState.testResults,
         triage: agentState.triageResult,
         security: agentState.securityResult,
+        a11y: agentState.a11yResult,
+        load: agentState.loadResult,
     };
     const outPath = `reports/agent-run-${Date.now()}.json`;
     fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
@@ -146,6 +172,13 @@ function printSummary() {
 
     if (agentState.securityResult) {
         console.log(formatSecurityReport(agentState.securityResult));
+    }
+
+    if (agentState.a11yResult) {
+        console.log(formatA11yReport(agentState.a11yResult));
+    }
+    if (agentState.loadResult) {
+        console.log(formatLoadReport(agentState.loadResult));
     }
 
     console.log('════════════════════════════════════\n');

@@ -136,7 +136,8 @@ export async function runSecurityScan({ targetUrl, mode = 'passive' }) {
             const order = ['High', 'Medium', 'Low', 'Informational'];
             return order.indexOf(a.risk) - order.indexOf(b.risk);
         })
-        .slice(0, 10);
+        .slice(0, 8);
+
     const findings = await enrichWithLLM(topAlerts, targetUrl);
 
 
