@@ -95,6 +95,135 @@ jobs:
           path: reports/
           retention-days: 30
 
+      - name: Rename latest report to index.html
+        if: always()
+        run: |
+          LATEST=$(ls reports/qa-report-*.html 2>/dev/null | sort -r | head -1)
+          if [ -n "$LATEST" ]; then
+            cp "$LATEST" reports/index.html
+            echo "Report ready: $LATEST -> reports/index.html"
+          else
+            echo "<h1>No report generated</h1>" > reports/index.html
+          fi
+
+      - name: Deploy report to Netlify
+        if: always()
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npm install -g netlify-cli --silent
+          netlify deploy \
+            --dir=reports \
+            --site=$NETLIFY_SITE_ID \
+            --auth=$NETLIFY_AUTH_TOKEN \
+            --prod \
+            --message="QA Report #${{ github.run_number }}" \
+            | tee netlify-output.txt
+          LIVE_URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.netlify\.app' netlify-output.txt | head -1)
+          echo ""
+          echo "Live report: $LIVE_URL"
+          echo "NETLIFY_URL=$LIVE_URL" >> $GITHUB_ENV
+
+      - name: Post Netlify URL to job summary
+        if: always()
+        run: |
+          if [ -n "$NETLIFY_URL" ]; then
+            echo "## Live Report" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "View the full QA report: [$NETLIFY_URL]($NETLIFY_URL)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Generate job summary
+        if: always()
+        run: |
+          node -e "
+          import('fs').then(fs => {
+            const files = fs.readdirSync('reports')
+              .filter(f => f.startsWith('agent-run') && f.endsWith('.json'))
+              .sort().reverse();
+
+            if (!files.length) {
+              fs.writeFileSync('reports/summary.md', '## QA-Agent\nNo report generated.', 'utf8');
+              process.exit(0);
+            }
+
+            const r = JSON.parse(fs.readFileSync('reports/' + files[0], 'utf8'));
+            const tests = r.testResults;
+            const sec = r.security;
+            const a11y = r.a11y;
+            const load = r.load;
+            const steps = r.steps || [];
+
+            const lines = [
+              '## QA-Agent quality report',
+              '',
+              '> ' + (r.url || '') + ' · ' + new Date(r.timestamp).toUTCString(),
+              '',
+              '| Test type | Result | Details |',
+              '|---|---|---|',
+              '| Functional | ' + (tests ? (tests.failed === 0 ? '✅' : '❌') : '⏭') + ' | ' + (tests ? tests.passed + '/' + tests.total + ' passing' : 'not run') + ' |',
+              '| Security | ' + (sec && !sec.skipped ? '✅' : '⏭') + ' | ' + (sec && !sec.skipped ? sec.uniqueCount + ' findings, ' + (sec.findings?.filter(f => f.severity === 'medium' || f.severity === 'high' || f.severity === 'critical').length || 0) + ' medium+' : 'skipped') + ' |',
+              '| Accessibility | ' + (a11y ? (a11y.violationCount === 0 ? '✅' : '⚠️') : '⏭') + ' | ' + (a11y ? a11y.violationCount + ' violations (' + (a11y.findings?.filter(f => f.impact === 'critical' || f.impact === 'serious').length || 0) + ' serious+)' : 'not run') + ' |',
+              '| Performance | ' + (load && load.metrics && load.metrics.p95 ? '✅' : '⏭') + ' | ' + (load && load.metrics && load.metrics.p95 ? 'p95=' + load.metrics.p95 + 'ms, avg=' + load.metrics.avg + 'ms, rps=' + load.metrics.rps : 'not run') + ' |',
+              '',
+              '### Agent execution trace',
+              '',
+              '| Step | Skill | Decision | Status |',
+              '|---|---|---|---|',
+              ...steps.map(s => '| ' + s.step + ' | \`' + s.skill + '\` | ' + s.reason + ' | ' + (s.status === 'success' ? '✅' : '❌') + ' |'),
+            ];
+
+            if (tests && tests.tests && tests.tests.length > 0) {
+              lines.push('', '### Functional tests', '', '| Test | Status | Duration |', '|---|---|---|');
+              tests.tests.forEach(t => {
+                lines.push('| ' + t.title + ' | ' + (t.status === 'passed' ? '✅ passed' : '❌ failed') + ' | ' + (t.duration ? t.duration + 'ms' : '—') + ' |');
+              });
+            }
+
+            if (sec && sec.findings && sec.findings.length > 0) {
+              lines.push('', '### Security findings', '', '| Finding | Severity | OWASP |', '|---|---|---|');
+              sec.findings.slice(0, 8).forEach(f => {
+                const sev = f.severity || 'info';
+                const icon = { critical: '🔴', high: '🟠', medium: '🟡', low: '🟢', info: '⚪' }[sev] || '⚪';
+                lines.push('| ' + (f.alertName || f.name || 'Unknown') + ' | ' + icon + ' ' + sev.toUpperCase() + ' | ' + (f.owaspId || '—') + ' |');
+              });
+            }
+
+            if (a11y && a11y.findings && a11y.findings.length > 0) {
+              lines.push('', '### Accessibility violations', '', '| Rule | Impact | WCAG | Priority |', '|---|---|---|---|');
+              a11y.findings.forEach(f => {
+                const icon = { critical: '🔴', serious: '🟠', moderate: '🟡', minor: '🟢' }[f.impact] || '⚪';
+                lines.push('| \`' + f.id + '\` | ' + icon + ' ' + (f.impact || '').toUpperCase() + ' | ' + (f.wcagCriteria || '—') + ' | ' + (f.priority || '—') + ' |');
+              });
+            }
+
+            if (load && load.metrics && load.metrics.p95) {
+              lines.push(
+                '', '### Performance baseline', '', '| Metric | Value |', '|---|---|',
+                '| p95 response | ' + load.metrics.p95 + 'ms |',
+                '| avg response | ' + load.metrics.avg + 'ms |',
+                '| error rate | ' + load.metrics.errorRate + '% |',
+                '| req/sec | ' + load.metrics.rps + ' |',
+                '| total requests | ' + load.metrics.totalRequests + ' |',
+                '| regression | ' + (load.regression && load.regression.hasRegression ? '⚠️ YES' : '✅ None') + ' |'
+              );
+            }
+
+            const content = lines.join('\n');
+            fs.writeFileSync('reports/summary.md', content, 'utf8');
+            console.log('[reporter] job summary written');
+          });
+          "
+
+      - name: Write to GitHub job summary
+        if: always()
+        run: |
+          if [ -f reports/summary.md ]; then
+            cat reports/summary.md >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -125,7 +254,7 @@ jobs:
             const failures = [];
 
             const sec = report.security;
-            if (sec?.findings) {
+            if (sec && sec.findings) {
               const blocking = sec.findings.filter(
                 f => f.severity === 'critical' || f.severity === 'high'
               ).length;
@@ -133,7 +262,7 @@ jobs:
             }
 
             const a11y = report.a11y;
-            if (a11y?.findings) {
+            if (a11y && a11y.findings) {
               const blocking = a11y.findings.filter(
                 f => f.impact === 'critical'
               ).length;
@@ -141,7 +270,7 @@ jobs:
             }
 
             const tests = report.testResults;
-            if (tests?.failed > 0) failures.push(tests.failed + ' failing tests');
+            if (tests && tests.failed > 0) failures.push(tests.failed + ' failing tests');
 
             if (failures.length > 0) {
               console.log('');
