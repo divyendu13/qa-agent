@@ -25,7 +25,7 @@ async function waitForZap(maxWaitMs = 30000) {
       await new Promise(r => setTimeout(r, 3000));
     }
   }
-  throw new Error('ZAP did not start within timeout');
+  return false;
 }
 
 async function waitForPassiveScan() {
@@ -58,7 +58,20 @@ export async function runSecurityScan({ targetUrl, mode = 'passive' }) {
   console.log(`[security] starting ${mode} scan on ${targetUrl}`);
 
   // 1. Verify ZAP is up
-  await waitForZap();
+  // Check ZAP is available — if not, skip gracefully
+  const zapReady = await waitForZap(30000);
+  if (!zapReady) {
+    console.log('[security] ZAP not available — skipping security scan');
+    return {
+      scanMode: mode,
+      targetUrl,
+      alertCount: 0,
+      uniqueCount: 0,
+      findings: [],
+      summary: 'ZAP not available — security scan skipped',
+      skipped: true
+    };
+  }
 
   // 2. Clear previous session
   await zapGet('/JSON/core/action/newSession/?name=qa-agent&overwrite=true');

@@ -209,6 +209,7 @@ async function run() {
     console.log(`  Mode   : ${MODE}`);
     console.log(`  Max    : ${MAX_STEPS} steps\n`);
 
+    try{
     for (let step = 1; step <= MAX_STEPS; step++) {
         console.log(`\n── Step ${step} ──────────────────────────`);
 
@@ -242,10 +243,14 @@ async function run() {
             console.log('[agent] max steps reached — stopping');
         }
     }
-
+    } catch (err) { 
+        console.log(`[agent] error in step: ${err.message}`);
+        // continue to save report even if something goes wrong
+    } finally {
     printSummary();
     const reportPath = saveReport();
     console.log(`[agent] full report saved to ${reportPath}\n`);
+    }
 }
 
 run().catch(console.error);
