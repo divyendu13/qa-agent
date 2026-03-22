@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 20 * * *'  # 2am IST daily (8pm UTC)
   workflow_dispatch:
     inputs:
       target_url:
@@ -14,13 +16,13 @@ on:
       mode:
         description: 'Agent mode'
         required: false
-        default: 'functional'
+        default: 'full'
         type: choice
         options: [functional, full]
 
 env:
   TARGET_URL: ${{ github.event.inputs.target_url || 'https://demo.playwright.dev/todomvc' }}
-  MODE: ${{ github.event.inputs.mode || 'functional' }}
+  MODE: ${{ github.event.inputs.mode || 'full' }}
 
 jobs:
   qa-agent:
@@ -56,8 +58,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install k6 -y
 
-      - name: Start ZAP (security mode only)
-        if: env.MODE == 'full' || env.MODE == 'security'
+      - name: Start ZAP (passive mode — fast, safe for CI)
         run: |
           docker run -d \
             --name zap \
@@ -68,12 +69,12 @@ jobs:
             -config api.addrs.addr.name=.* \
             -config api.addrs.addr.regex=true
           echo "Waiting for ZAP to start..."
-          for i in {1..30}; do
+          for i in {1..40}; do
             if curl -sf "http://localhost:8080/JSON/core/view/version/?apikey=qaagent123" > /dev/null 2>&1; then
-              echo "ZAP is ready"
+              echo "ZAP is ready after $i attempts"
               break
             fi
-            echo "Attempt $i/30 — waiting..."
+            echo "Attempt $i/40 — waiting 5s..."
             sleep 5
           done
 
@@ -107,42 +108,50 @@ jobs:
         if: always()
         run: |
           node -e "
-          import('./src/skills/reporter.js').then(async () => {
-            const fs = await import('fs');
-            const reports = fs.readdirSync('reports')
-              .filter(f => f.startsWith('qa-report') && f.endsWith('.json'))
+          import('fs').then(fs => {
+            const reportsDir = 'reports';
+            const files = fs.readdirSync(reportsDir)
+              .filter(f => f.startsWith('agent-run') && f.endsWith('.json'))
               .sort().reverse();
 
-            if (!reports.length) {
+            if (!files.length) {
               console.log('No report found — skipping gate');
               process.exit(0);
             }
 
-            const report = JSON.parse(fs.readFileSync('reports/' + reports[0], 'utf8'));
+            const report = JSON.parse(
+              fs.readFileSync(reportsDir + '/' + files[0], 'utf8')
+            );
             const failures = [];
 
             const sec = report.security;
             if (sec?.findings) {
-              const critical = sec.findings.filter(f => f.severity === 'critical' || f.severity === 'high').length;
-              if (critical > 0) failures.push(critical + ' critical/high security findings');
+              const blocking = sec.findings.filter(
+                f => f.severity === 'critical' || f.severity === 'high'
+              ).length;
+              if (blocking > 0) failures.push(blocking + ' critical/high security findings');
             }
 
             const a11y = report.a11y;
             if (a11y?.findings) {
-              const crit = a11y.findings.filter(f => f.impact === 'critical').length;
-              if (crit > 0) failures.push(crit + ' critical accessibility violations');
+              const blocking = a11y.findings.filter(
+                f => f.impact === 'critical'
+              ).length;
+              if (blocking > 0) failures.push(blocking + ' critical a11y violations');
             }
 
             const tests = report.testResults;
             if (tests?.failed > 0) failures.push(tests.failed + ' failing tests');
 
             if (failures.length > 0) {
-              console.log('QUALITY GATE FAILED:');
-              failures.forEach(f => console.log('  ✗ ' + f));
+              console.log('');
+              console.log('QUALITY GATE FAILED');
+              failures.forEach(f => console.log('  x ' + f));
+              console.log('');
               process.exit(1);
-            } else {
-              console.log('QUALITY GATE PASSED ✓');
-              process.exit(0);
             }
+
+            console.log('QUALITY GATE PASSED');
+            process.exit(0);
           });
           "

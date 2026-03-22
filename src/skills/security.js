@@ -55,7 +55,10 @@ async function waitForActiveScan(scanId) {
 // ── Main security scan ───────────────────────────────
 
 export async function runSecurityScan({ targetUrl, mode = 'passive' }) {
-  console.log(`[security] starting ${mode} scan on ${targetUrl}`);
+   // Always use passive in CI — active scan is too slow for PR pipelines
+  const isCI = process.env.CI === 'true';
+  const scanMode = isCI ? 'passive' : mode;
+  console.log(`[security] starting ${scanMode} scan on ${targetUrl}`);
 
   // 1. Verify ZAP is up
   // Check ZAP is available — if not, skip gracefully
@@ -115,7 +118,7 @@ export async function runSecurityScan({ targetUrl, mode = 'passive' }) {
   await waitForPassiveScan();
 
   // 6. Run active scan if requested
-  if (mode === 'active') {
+  if (scanMode === 'active') {
     const scanData = await zapGet(`/JSON/ascan/action/scan/?url=${encodeURIComponent(targetUrl)}&recurse=true`);
     await waitForActiveScan(scanData.scan);
   }
