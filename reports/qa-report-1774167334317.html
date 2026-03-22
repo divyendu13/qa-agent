@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA-Agent Report — demo.playwright.dev</title>
+<style>
+  :root {
+    --green: #1D9E75; --green-light: #E1F5EE; --green-dark: #085041;
+    --red: #E24B4A; --red-light: #FCEBEB; --red-dark: #791F1F;
+    --amber: #BA7517; --amber-light: #FAEEDA; --amber-dark: #633806;
+    --blue: #185FA5; --blue-light: #E6F1FB; --blue-dark: #0C447C;
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --gray: #5F5E5A; --gray-light: #F1EFE8; --gray-dark: #2C2C2A;
+    --text: #1a1a1a; --text-muted: #6b6b6b; --border: #e5e5e5;
+    --bg: #f8f8f6; --card: #ffffff;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+  a { color: var(--blue); text-decoration: none; }
+
+  /* Layout */
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* Header */
+  .report-header { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem; }
+  .report-header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .report-header .meta { font-size: 13px; color: var(--text-muted); display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 8px; }
+  .report-header .meta span::before { content: ''; margin-right: 4px; }
+
+  /* Quality gate */
+  .gate { padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 12px; font-weight: 500; }
+  .gate.pass { background: var(--green-light); color: var(--green-dark); border: 1px solid #9FE1CB; }
+  .gate.fail { background: var(--red-light); color: var(--red-dark); border: 1px solid #F7C1C1; }
+  .gate-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .gate.pass .gate-icon { background: var(--green); color: white; }
+  .gate.fail .gate-icon { background: var(--red); color: white; }
+  .gate-reasons { font-size: 12px; font-weight: 400; margin-top: 2px; }
+
+  /* Score cards */
+  .scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .score-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; }
+  .score-card .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 8px; }
+  .score-num { font-size: 36px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .score-sub { font-size: 12px; color: var(--text-muted); }
+  .score-green { color: var(--green); }
+  .score-amber { color: var(--amber); }
+  .score-red   { color: var(--red); }
+  .score-blue  { color: var(--blue); }
+
+  /* Steps timeline */
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1.5rem; overflow: hidden; }
+  .section-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .section-title { font-size: 15px; font-weight: 600; }
+  .section-badge { font-size: 11px; padding: 2px 10px; border-radius: 10px; }
+  .section-body { padding: 1.25rem; }
+
+  .timeline { display: flex; flex-direction: column; gap: 8px; }
+  .step { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .step:last-child { border-bottom: none; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--blue-light); color: var(--blue-dark); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-skill { font-size: 12px; font-weight: 600; color: var(--blue); min-width: 80px; margin-top: 2px; }
+  .step-reason { font-size: 13px; color: var(--text); flex: 1; }
+  .step-result { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Test results table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; background: var(--gray-light); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+  .pill { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 10px; font-weight: 500; }
+  .pill-pass     { background: var(--green-light); color: var(--green-dark); }
+  .pill-fail     { background: var(--red-light);   color: var(--red-dark); }
+  .pill-critical { background: #FCEBEB; color: #791F1F; }
+  .pill-high     { background: #FAEEDA; color: #633806; }
+  .pill-medium   { background: #FFF3CD; color: #856404; }
+  .pill-low      { background: var(--green-light); color: var(--green-dark); }
+  .pill-info     { background: var(--gray-light);  color: var(--gray-dark); }
+  .pill-serious  { background: #FAEEDA; color: #633806; }
+  .pill-moderate { background: #FFF3CD; color: #856404; }
+  .pill-minor    { background: var(--gray-light);  color: var(--gray-dark); }
+
+  /* Metric cards */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+  .metric { background: var(--bg); border-radius: var(--radius-sm); padding: 12px; text-align: center; }
+  .metric-val { font-size: 24px; font-weight: 700; color: var(--text); }
+  .metric-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Triage */
+  .triage-card { background: var(--amber-light); border: 1px solid #FAC775; border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px; }
+  .triage-title { font-weight: 600; margin-bottom: 6px; color: var(--amber-dark); }
+  .triage-row { display: flex; gap: 8px; font-size: 12px; margin-top: 4px; }
+  .triage-label { color: var(--text-muted); min-width: 90px; }
+  .triage-val { color: var(--text); flex: 1; }
+
+  /* Footer */
+  .footer { text-align: center; font-size: 12px; color: var(--text-muted); padding: 2rem 0 1rem; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .scores { grid-template-columns: repeat(2, 1fr); }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="report-header">
+    <h1>QA-Agent quality report</h1>
+    <div style="font-size:13px;color:var(--text-muted);margin-top:4px">
+      <a href="https://demo.playwright.dev/todomvc" target="_blank">https://demo.playwright.dev/todomvc</a>
+    </div>
+    <div class="meta">
+      <span>Generated: 22/3/2026, 1:45:34 pm</span>
+      <span>Mode: full</span>
+      <span>Steps: 7</span>
+      <span>Powered by Claude via AWS Bedrock</span>
+    </div>
+  </div>
+
+  <!-- Quality gate -->
+  <div class="gate fail">
+    <div class="gate-icon">✗</div>
+    <div>
+      <div>Quality gate: FAILED — do not merge</div>
+      <div class="gate-reasons">Blocking: 1 failing tests</div>
+    </div>
+  </div>
+
+  <!-- Score cards -->
+  <div class="scores">
+    <div class="score-card">
+      <div class="label">Overall</div>
+      <div class="score-num score-green">90</div>
+      <div class="score-sub">quality score</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Functional</div>
+      <div class="score-num score-amber">3<span style="font-size:18px;font-weight:400">/4</span></div>
+      <div class="score-sub">tests passing</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Security</div>
+      <div class="score-num score-green">8</div>
+      <div class="score-sub">0 critical/high</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Accessibility</div>
+      <div class="score-num score-amber">1</div>
+      <div class="score-sub">0 critical, 1 serious</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Performance</div>
+      <div class="score-num score-green">17<span style="font-size:16px">ms</span></div>
+      <div class="score-sub">p95 response time</div>
+    </div>
+  </div>
+
+  <!-- Agent steps timeline -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Agent execution trace</div>
+      <span class="section-badge pill pill-pass">7 steps</span>
+    </div>
+    <div class="section-body">
+      <div class="timeline">
+        
+        <div class="step">
+          <div class="step-num">1</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="step-skill">browse</span>
+              <span class="pill pill-pass">success</span>
+            </div>
+            <div class="step-reason">Need to read the page content to generate the Playwright test</div>
+            <div class="step-result">Browsed https://demo.playwright.dev/todomvc. Found 1 testable actions: Double-click to edit a todo</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="step-skill">generate</span>
+              <span class="pill pill-pass">success</span>
+            </div>
+            <div class="step-reason">The page has been browsed and testable actions have been identified, so the next step is to generate Playwright tests based on the page analysis.</div>
+            <div class="step-result">Generated test file at tests/generated/agent-generated.spec.js</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="step-skill">run</span>
+              <span class="pill pill-pass">success</span>
+            </div>
+            <div class="step-reason">The test file has been generated, so it's time to run the tests.</div>
+            <div class="step-result">Tests run: 3 passed, 1 failed out of 4 total</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="step-skill">triage</span>
+              <span class="pill pill-pass">success</span>
+            </div>
+            <div class="step-reason">The last test run had 1 failure, so we need to diagnose the issue and suggest fixes.</div>
+            <div class="step-result">Triaged 1 failure(s). Top issue: The expected behavior of the test was not met, but the reason for the failure is not clear from the available information.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="step-skill">security</span>
+              <span class="pill pill-pass">success</span>
+            </div>
+            <div class="step-reason">The test results have a failure, so we should run a security scan to check for any vulnerabilities that could be causing the issue.</div>
+            <div class="step-result">Found 0 high/critical, 3 medium, 1 low severity issues</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="step-skill">a11y</span>
+              <span class="pill pill-pass">success</span>
+            </div>
+            <div class="step-reason">The a11y scan has not been run yet, so it should be executed next to check the accessibility of the website.</div>
+            <div class="step-result">Found 0 critical, 1 serious, 0 other WCAG violations</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">7</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="step-skill">load</span>
+              <span class="pill pill-pass">success</span>
+            </div>
+            <div class="step-reason">The load test has not been run yet, so it should be executed to complete the full mode workflow.</div>
+            <div class="step-result">p95=17ms | avg=24ms | errors=0% | rps=9.3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Functional tests -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Functional tests</div>
+      <span class="section-badge pill pill-fail">3/4 passing</span>
+    </div>
+    <div class="section-body">
+      
+      <table>
+        <thead><tr><th>Test</th><th>Status</th><th>Duration</th></tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>should add a new todo</td>
+            <td><span class="pill pill-pass">passed</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>should double-click to edit a todo</td>
+            <td><span class="pill pill-pass">passed</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>should complete a todo</td>
+            <td><span class="pill pill-pass">passed</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>should delete a todo</td>
+            <td><span class="pill pill-fail">failed</span></td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+
+      
+      <div style="margin-top:1rem">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--amber-dark)">Failure triage</div>
+        
+        <div class="triage-card">
+          <div class="triage-title">should delete a todo</div>
+          <div class="triage-row"><span class="triage-label">Severity</span><span class="triage-val"><span class="pill pill-medium">MEDIUM</span></span></div>
+          <div class="triage-row"><span class="triage-label">Category</span><span class="triage-val">assertion</span></div>
+          <div class="triage-row"><span class="triage-label">Root cause</span><span class="triage-val">The expected behavior of the test was not met, but the reason for the failure is not clear from the available information.</span></div>
+          <div class="triage-row"><span class="triage-label">Suggested fix</span><span class="triage-val">Add more specific assertions to the test to better capture the expected behavior and provide more information about the failure.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Security — OWASP Top 10</div>
+      <span class="section-badge pill pill-pass">8 findings</span>
+    </div>
+    <div class="section-body">
+      
+      <table>
+        <thead><tr><th>Finding</th><th>OWASP</th><th>Severity</th><th>Remediation</th></tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>
+              <div style="font-weight:500">Missing Anti-clickjacking Header</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">The response does not protect against 'ClickJacking' attacks. It should include either Content-Security-Policy with 'fra…</div>
+            </td>
+            <td style="white-space:nowrap"><span style="font-size:12px">Unknown</span></td>
+            <td><span class="pill pill-medium">MEDIUM</span></td>
+            <td style="font-size:12px">Modern Web browsers support the Content-Security-Policy and X-Frame-Options HTTP headers. Ensure one…</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:500">Cross-Domain Misconfiguration</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Web browser data loading may be possible, due to a Cross Origin Resource Sharing (CORS) misconfiguration on the web serv…</div>
+            </td>
+            <td style="white-space:nowrap"><span style="font-size:12px">Unknown</span></td>
+            <td><span class="pill pill-medium">MEDIUM</span></td>
+            <td style="font-size:12px">Ensure that sensitive data is not available in an unauthenticated manner (using IP address white-lis…</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:500">Content Security Policy (CSP) Header Not Set</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Content Security Policy (CSP) is an added layer of security that helps to detect and mitigate certain types of attacks, …</div>
+            </td>
+            <td style="white-space:nowrap"><span style="font-size:12px">Unknown</span></td>
+            <td><span class="pill pill-medium">MEDIUM</span></td>
+            <td style="font-size:12px">Ensure that your web server, application server, load balancer, etc. is configured to set the Conten…</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:500">X-Content-Type-Options Header Missing</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. This allows older versions of Internet Ex…</div>
+            </td>
+            <td style="white-space:nowrap"><span style="font-size:12px">Unknown</span></td>
+            <td><span class="pill pill-low">LOW</span></td>
+            <td style="font-size:12px">Ensure that the application/web server sets the Content-Type header appropriately, and that it sets …</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:500">Re-examine Cache-control Directives</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">The cache-control header has not been set properly or is missing, allowing the browser and proxies to cache content. For…</div>
+            </td>
+            <td style="white-space:nowrap"><span style="font-size:12px">Unknown</span></td>
+            <td><span class="pill pill-informational">INFORMATIONAL</span></td>
+            <td style="font-size:12px">For secure content, ensure the cache-control HTTP header is set with "no-cache, no-store, must-reval…</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:500">Retrieved from Cache</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">The content was retrieved from a shared cache. If the response data is sensitive, personal or user-specific, this may re…</div>
+            </td>
+            <td style="white-space:nowrap"><span style="font-size:12px">Unknown</span></td>
+            <td><span class="pill pill-informational">INFORMATIONAL</span></td>
+            <td style="font-size:12px">Validate that the response does not contain sensitive, personal or user-specific information. If it …</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:500">Information Disclosure - Suspicious Comments</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">The response appears to contain suspicious comments which may help an attacker.</div>
+            </td>
+            <td style="white-space:nowrap"><span style="font-size:12px">Unknown</span></td>
+            <td><span class="pill pill-informational">INFORMATIONAL</span></td>
+            <td style="font-size:12px">Remove all comments that return information that may help an attacker and fix any underlying problem…</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:500">User Agent Fuzzer</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Check for differences in response based on fuzzed User Agent (eg. mobile sites, access as a Search Engine Crawler). Comp…</div>
+            </td>
+            <td style="white-space:nowrap"><span style="font-size:12px">Unknown</span></td>
+            <td><span class="pill pill-informational">INFORMATIONAL</span></td>
+            <td style="font-size:12px">Review manually</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Accessibility -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Accessibility — WCAG 2.1 AA</div>
+      <span class="section-badge pill pill-high">1 violations</span>
+    </div>
+    <div class="section-body">
+      
+      <table>
+        <thead><tr><th>Violation</th><th>WCAG</th><th>Impact</th><th>Affects</th><th>Priority</th></tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>
+              <div style="font-weight:500;font-family:monospace;font-size:12px">color-contrast</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">The contrast between the text ('todos') and the background is too low, making it difficult for users with low vision or </div>
+            </td>
+            <td style="font-size:12px;white-space:nowrap">wcag2aa, wcag143</td>
+            <td><span class="pill pill-serious">SERIOUS</span></td>
+            <td style="font-size:12px">Users with low vision, color vision deficiencies, and older adults</td>
+            <td style="font-size:12px">fix soon</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Load test -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Performance — k6 load test</div>
+      <span class="section-badge pill pill-pass">baseline saved</span>
+    </div>
+    <div class="section-body">
+      
+      <div class="metrics-grid">
+        <div class="metric"><div class="metric-val">17ms</div><div class="metric-lbl">p95 response</div></div>
+        <div class="metric"><div class="metric-val">24ms</div><div class="metric-lbl">avg response</div></div>
+        <div class="metric"><div class="metric-val">n/a</div><div class="metric-lbl">error rate</div></div>
+        <div class="metric"><div class="metric-val">9.3</div><div class="metric-lbl">req/sec</div></div>
+        <div class="metric"><div class="metric-val">194</div><div class="metric-lbl">total requests</div></div>
+        <div class="metric"><div class="metric-val">5</div><div class="metric-lbl">virtual users</div></div>
+      </div>
+      <div style="font-size:13px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--green-light);color:var(--green-dark)">
+        ✓ No regression vs baseline
+      </div>
+      
+      
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated by <strong>QA-Agent</strong> — autonomous quality engineering powered by Claude (AWS Bedrock) · <a href="https://github.com/divyendu13/qa-agent">github.com/divyendu13/qa-agent</a>
+  </div>
+
+</div>
+</body>
+</html>

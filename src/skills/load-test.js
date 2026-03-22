@@ -36,35 +36,32 @@ export async function runLoadTest({ targetUrl, vus = 10, duration = '30s' }) {
 }
 
 async function generateK6Script(targetUrl, vus, duration) {
-  const systemPrompt = `You are a k6 load testing expert.
-Generate a k6 load test script for the given URL.
-Return ONLY raw JavaScript — no markdown, no explanation, no code fences.
+  // Hardcoded reliable template — Claude-generated k6 scripts fail in k6's
+  // non-Node.js runtime. This template is battle-tested and always works.
+  return `import http from 'k6/http';
+import { check, sleep } from 'k6';
 
-Rules:
-- Use k6's http module and check/sleep functions
-- Test realistic user flows — GET the page, check response code and body
-- Set the exported options with vus and duration from the params
-- Add threshold: http_req_duration p(95) < 2000ms
-- Add threshold: http_req_failed rate < 0.05
-- Use sleep(1) between requests to simulate real users
-- Check response status is 200
-- Check response body contains expected content`;
+export const options = {
+  vus: ${vus},
+  duration: '${duration}',
+  thresholds: {
+    http_req_duration: ['p(95)<2000'],
+    http_req_failed: ['rate<0.05'],
+  },
+};
 
-  const userMessage = `Generate a k6 load test script for: ${targetUrl}
-VUs: ${vus}
-Duration: ${duration}
+export default function () {
+  const res = http.get('${targetUrl}');
 
-The page is a TodoMVC app. Test loading the main page realistically.
-Return only the raw k6 JavaScript code.`;
+  check(res, {
+    'status is 200': (r) => r.status === 200,
+    'response time ok': (r) => r.timings.duration < 2000,
+    'has content': (r) => r.body && r.body.length > 0,
+  });
 
-  const raw = await sendMessage(systemPrompt, userMessage);
-
-  // Clean any markdown fences
-  return raw
-    .replace(/```javascript\n?/g, '')
-    .replace(/```js\n?/g, '')
-    .replace(/```\n?/g, '')
-    .trim();
+  sleep(1);
+}
+`;
 }
 
 async function executeK6(scriptPath) {
@@ -77,11 +74,11 @@ async function executeK6(scriptPath) {
       `k6 run --out json=${jsonOutputPath} --quiet ${scriptPath}`,
       { timeout: 120000 }
     );
+    await new Promise(r => setTimeout(r, 2000));
 
     // Save raw output for debugging
     const combined = stdout + stderr;
     fs.writeFileSync('reports/k6-raw-output.txt', combined, 'utf8');
-    await new Promise(r => setTimeout(r, 1000)); // wait for file flush
     // Try parsing from the JSON output file first
     if (fs.existsSync(jsonOutputPath)) {
       return parseK6JsonFile(jsonOutputPath);

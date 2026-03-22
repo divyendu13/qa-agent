@@ -17,7 +17,7 @@
         - listitem [ref=e13]:
           - generic [ref=e14]:
             - checkbox "Toggle Todo" [ref=e15]
-            - generic [ref=e16]: Learn Playwright
+            - generic [ref=e16]: Todo to delete
             - text: ×
     - generic [ref=e17]:
       - generic [ref=e18]:

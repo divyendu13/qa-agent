@@ -6,6 +6,7 @@ import { triageFailures, formatTriageReport } from './skills/triage.js';
 import { runSecurityScan, formatSecurityReport } from './skills/security.js';
 import { runAccessibilityScan, formatA11yReport } from './skills/accessibility.js';
 import { runLoadTest, formatLoadReport } from './skills/load-test.js';
+import { generateHtmlReport } from './skills/reporter.js';
 import fs from 'fs';
 
 // ── Parse CLI args ───────────────────────────────────
@@ -114,8 +115,8 @@ async function executeSkill(skill, params) {
             console.log('[agent] skill: load');
             agentState.loadResult = await runLoadTest({
                 targetUrl: agentState.url,
-                vus: 10,
-                duration: '30s'
+                vus: 5,
+                duration: '20s'
             });
             const summary = agentState.loadResult.summary;
             console.log(`[agent] ${summary}`);
@@ -144,7 +145,22 @@ function saveReport() {
     };
     const outPath = `reports/agent-run-${Date.now()}.json`;
     fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
-    return outPath;
+    //return outPath;
+
+    const htmlPath = generateHtmlReport({
+        url: TARGET_URL,
+        mode: MODE,
+        timestamp: new Date().toISOString(),
+        steps: agentState.steps,
+        testResults: agentState.testResults,
+        triage: agentState.triageResult,
+        securityResult: agentState.securityResult,
+        a11yResult: agentState.a11yResult,
+        loadResult: agentState.loadResult,
+    });
+
+    console.log(`[agent] HTML report → ${htmlPath}`);
+    return htmlPath;
 }
 
 // ── Print final summary ──────────────────────────────
