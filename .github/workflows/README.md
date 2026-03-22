@@ -1,0 +1,1 @@
+[![CI](https://github.com/divyendu13/qa-agent/actions/workflows/qa-agent.yml/badge.svg)](https://github.com/divyendu13/qa-agent/actions/workflows/qa-agent.yml)

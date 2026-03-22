@@ -1,0 +1,148 @@
+name: QA-Agent
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target URL to scan'
+        required: false
+        default: 'https://demo.playwright.dev/todomvc'
+      mode:
+        description: 'Agent mode'
+        required: false
+        default: 'functional'
+        type: choice
+        options: [functional, full]
+
+env:
+  TARGET_URL: ${{ github.event.inputs.target_url || 'https://demo.playwright.dev/todomvc' }}
+  MODE: ${{ github.event.inputs.mode || 'functional' }}
+
+jobs:
+  qa-agent:
+    name: QA-Agent run
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring \
+            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6 -y
+
+      - name: Start ZAP (security mode only)
+        if: env.MODE == 'full' || env.MODE == 'security'
+        run: |
+          docker run -d \
+            --name zap \
+            -p 8080:8080 \
+            zaproxy/zap-stable \
+            zap.sh -daemon -host 0.0.0.0 -port 8080 \
+            -config api.key=qaagent123 \
+            -config api.addrs.addr.name=.* \
+            -config api.addrs.addr.regex=true
+          echo "Waiting for ZAP to start..."
+          for i in {1..30}; do
+            if curl -sf "http://localhost:8080/JSON/core/view/version/?apikey=qaagent123" > /dev/null 2>&1; then
+              echo "ZAP is ready"
+              break
+            fi
+            echo "Attempt $i/30 — waiting..."
+            sleep 5
+          done
+
+      - name: Run QA-Agent
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ZAP_API_KEY: qaagent123
+          ZAP_PROXY_URL: http://localhost:8080
+        run: node src/agent.js --url ${{ env.TARGET_URL }} --mode ${{ env.MODE }}
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-report-${{ github.run_number }}
+          path: reports/
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_number }}
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Quality gate check
+        if: always()
+        run: |
+          node -e "
+          import('./src/skills/reporter.js').then(async () => {
+            const fs = await import('fs');
+            const reports = fs.readdirSync('reports')
+              .filter(f => f.startsWith('qa-report') && f.endsWith('.json'))
+              .sort().reverse();
+
+            if (!reports.length) {
+              console.log('No report found — skipping gate');
+              process.exit(0);
+            }
+
+            const report = JSON.parse(fs.readFileSync('reports/' + reports[0], 'utf8'));
+            const failures = [];
+
+            const sec = report.security;
+            if (sec?.findings) {
+              const critical = sec.findings.filter(f => f.severity === 'critical' || f.severity === 'high').length;
+              if (critical > 0) failures.push(critical + ' critical/high security findings');
+            }
+
+            const a11y = report.a11y;
+            if (a11y?.findings) {
+              const crit = a11y.findings.filter(f => f.impact === 'critical').length;
+              if (crit > 0) failures.push(crit + ' critical accessibility violations');
+            }
+
+            const tests = report.testResults;
+            if (tests?.failed > 0) failures.push(tests.failed + ' failing tests');
+
+            if (failures.length > 0) {
+              console.log('QUALITY GATE FAILED:');
+              failures.forEach(f => console.log('  ✗ ' + f));
+              process.exit(1);
+            } else {
+              console.log('QUALITY GATE PASSED ✓');
+              process.exit(0);
+            }
+          });
+          "
