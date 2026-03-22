@@ -1,13 +1,25 @@
 # QA-Agent 🤖
 
-> An autonomous AI agent that browses a web app, generates Playwright tests, runs them, triages failures, scans for OWASP security vulnerabilities, and checks WCAG accessibility — all from a single command.
+> An autonomous AI agent that browses a web app, generates Playwright tests, runs them, triages failures, scans for OWASP security vulnerabilities, checks WCAG accessibility, and runs k6 load tests — all from a single command.
 
-[![CI](https://github.com/divyendu13/qa-agent/actions/workflows/qa-agent.yml/badge.svg)](https://github.com/divyendu13/qa-agent/actions)
-[![Node](https://img.shields.io/badge/node-20.x-brightgreen)](https://nodejs.org)
+[![CI](https://github.com/divyendu13/qa-agent/actions/workflows/qa-agent.yml/badge.svg)](https://github.com/divyendu13/qa-agent/actions/workflows/qa-agent.yml)
+[![Live Report](https://img.shields.io/badge/live%20report-netlify-00C7B7)](https://qa-agent-report.netlify.app/)
+[![Node](https://img.shields.io/badge/node-22.x-brightgreen)](https://nodejs.org)
 [![Playwright](https://img.shields.io/badge/playwright-1.x-blue)](https://playwright.dev)
-[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+[![k6](https://img.shields.io/badge/load-k6-7D64FF)](https://k6.io)
 [![OWASP](https://img.shields.io/badge/security-OWASP%20Top%2010-red)](https://owasp.org/Top10/)
 [![WCAG](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA-purple)](https://www.w3.org/WAI/WCAG21/quickref/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+
+---
+
+## Live report
+
+Every CI run auto-deploys the full quality report to Netlify:
+
+**[qa-agent-report.netlify.app](https://qa-agent-report.netlify.app/)**
+
+No download. No zip. Click and see the full report — functional results, OWASP findings, WCAG violations, k6 load metrics — all in one page.
 
 ---
 
@@ -18,71 +30,76 @@ Most test automation tools need a human to write the tests. QA-Agent doesn't.
 Give it a URL. It figures out the rest.
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐     ┌──────────────┐
-│  Browse app │ ──▶ │ Claude reads │ ──▶ │ Writes & runs   │ ──▶ │ Triages      │
-│  via        │     │ the page,    │     │ Playwright tests │     │ failures,    │
-│  Playwright │     │ plans tests  │     │ autonomously     │     │ files bugs   │
-└─────────────┘     └──────────────┘     └─────────────────┘     └──────────────┘
-                                                                         │
-                    ┌────────────────────────────────────────────────────┘
+┌─────────────┐     ┌──────────────┐     ┌──────────────────┐     ┌─────────────┐
+│  Browse app │ ──▶ │ Claude reads │ ──▶ │ Writes and runs  │ ──▶ │  Triages    │
+│  via        │     │ the page,    │     │ Playwright tests  │     │  failures   │
+│  Playwright │     │ plans tests  │     │ autonomously      │     │  with AI    │
+└─────────────┘     └──────────────┘     └──────────────────┘     └─────────────┘
+                                                                          │
+                    ┌─────────────────────────────────────────────────────┘
                     ▼
-          ┌──────────────────────────────────────────────┐
-          │  Unified quality report                       │
-          │  ✓ Functional test results                    │
-          │  ✓ OWASP Top 10 security findings + AI triage │
-          │  ✓ WCAG 2.1 AA accessibility violations       │
-          └──────────────────────────────────────────────┘
+          ┌─────────────────────────────────────────────────┐
+          │  Unified quality report                          │
+          │  ✓ Functional test results + triage              │
+          │  ✓ OWASP Top 10 security findings + AI narrative │
+          │  ✓ WCAG 2.1 AA accessibility violations          │
+          │  ✓ k6 load metrics + regression detection        │
+          └─────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Demo
 
-> Agent run against [TodoMVC](https://demo.playwright.dev/todomvc) — zero human-written tests
+> Autonomous agent run against [TodoMVC](https://demo.playwright.dev/todomvc) — zero human-written tests
 
 ```bash
-$ node src/agent.js --url https://demo.playwright.dev/todomvc
+$ node src/agent.js --url https://demo.playwright.dev/todomvc --mode full
 
-[browser] launched
+╔════════════════════════════════════╗
+║         QA-Agent v1.0.0            ║
+╚════════════════════════════════════╝
+  Target : https://demo.playwright.dev/todomvc
+  Mode   : full
+  Max    : 10 steps
+
+── Step 1 ──────────────────────────
+[agent] decided: browse — need to read the app first
 [browser] navigated to https://demo.playwright.dev/todomvc
-[agent]   reading page...
-[agent]   asking Claude to analyze page and plan tests...
+[agent] Found 5 testable actions: add todos, edit todos, complete todos...
 
---- Page description ---
-TodoMVC — a todo list application with add, edit, complete, and delete functionality.
+── Step 2 ──────────────────────────
+[agent] decided: generate — page analyzed, ready to write tests
+[generate] test file written to tests/generated/agent-generated.spec.js
 
---- Testable actions identified ---
-  1. Adding new todo items
-  2. Editing existing todos by double-clicking
-  3. Marking todos as complete
-  4. Deleting todos
-  5. Filtering by All / Active / Completed
+── Step 3 ──────────────────────────
+[agent] decided: run — tests generated, need to execute them
+[agent] Tests run: 3 passed, 0 failed out of 3 total
 
---- Generated test file → tests/generated/todo.spec.js
---- Running tests...
+── Step 4 ──────────────────────────
+[agent] decided: triage — checking for failures
+[triage] all tests passed — no triage needed
 
-  ✓  TodoMVC › Create new todos          (332ms)
-  ✓  TodoMVC › Edit existing todos       (361ms)
-  ✓  TodoMVC › Verify todo display       (277ms)
-  ✓  TodoMVC › Open edit mode on dclick  (256ms)
-  ✗  TodoMVC › Validate external links   (timeout)
+── Step 5 ──────────────────────────
+[agent] decided: security — run OWASP ZAP scan
+[security] passive scan complete
+[agent] Found 0 high/critical, 3 medium, 1 low severity issues
 
-  4 passed, 1 failed
+── Step 6 ──────────────────────────
+[agent] decided: a11y — run accessibility scan
+[a11y] found 1 violation — color-contrast (SERIOUS, wcag2aa)
 
---- Triage report ---
-  Failed test : Validate external links
-  Root cause  : External link navigates away from app domain
-  Severity    : Low
-  Suggested fix: Use separate browser context for external link validation
+── Step 7 ──────────────────────────
+[agent] decided: load — run k6 performance baseline
+[load] p95=9ms | avg=9ms | errors=0% | rps=9.8 | total=200
 
---- Security scan (OWASP ZAP passive) ---
-  A05:2021 — Missing Content-Security-Policy header     [Medium]
-  A05:2021 — Missing X-Frame-Options header             [Low]
+── Step 8 ──────────────────────────
+[agent] decided: done — all skills complete
 
---- Accessibility scan (axe-core / WCAG 2.1 AA) ---
-  contrast — 2 elements with insufficient color contrast [Serious]
-
-[agent] report saved → reports/qa-report-2026-03-14.html
+════════════════════════════════════
+  QA-Agent run complete — score: 96
+════════════════════════════════════
+  Report : https://qa-agent-report.netlify.app
 ```
 
 ---
@@ -93,7 +110,7 @@ TodoMVC — a todo list application with add, edit, complete, and delete functio
 qa-agent/
 ├── src/
 │   ├── agent.js              # Main orchestrator — ReAct loop
-│   ├── llm.js                # AWS Bedrock (Claude) wrapper with retry logic
+│   ├── llm.js                # AWS Bedrock (Claude) wrapper + retry logic
 │   └── skills/
 │       ├── browse.js         # Playwright browser skill
 │       ├── generate.js       # AI test generation skill
@@ -101,30 +118,31 @@ qa-agent/
 │       ├── triage.js         # AI failure triage skill
 │       ├── security.js       # OWASP ZAP integration skill
 │       ├── accessibility.js  # axe-core WCAG skill
+│       ├── load-test.js      # k6 load test skill
 │       └── reporter.js       # Unified HTML report generator
 ├── tests/
-│   └── generated/            # AI-generated test files land here
-├── reports/                  # HTML reports, screenshots, JSON summaries
+│   ├── generated/            # AI-generated Playwright test files
+│   └── load/                 # AI-generated k6 load scripts
+├── reports/                  # HTML reports, JSON summaries, screenshots
 ├── .github/
 │   └── workflows/
-│       └── qa-agent.yml      # GitHub Actions CI pipeline
+│       └── qa-agent.yml      # GitHub Actions CI — runs on every push/PR
 ├── docker-compose.yml        # ZAP daemon for security scanning
-├── playwright.config.js
-└── README.md
+└── playwright.config.js
 ```
 
 ### How the agent thinks — ReAct loop
 
 ```
 Reason  →  Act  →  Observe  →  Loop
-  │           │         │
-  │      call skill  read result
-  │           │         │
-  └───────────┴─────────┘
-     until task complete
+  │            │         │
+  │       call skill   read result
+  │            │         │
+  └────────────┴─────────┘
+      until task complete
 ```
 
-The LLM orchestrates everything. Each skill (browse, generate, run, triage, scan) is a tool the agent can call. The agent decides the order, handles failures, and produces the final report — no hardcoded test scripts.
+The LLM orchestrates everything. Each skill is a tool Claude can call. It decides the order, handles failures, and produces the final report — no hardcoded test scripts, no human in the loop.
 
 ---
 
@@ -132,14 +150,16 @@ The LLM orchestrates everything. Each skill (browse, generate, run, triage, scan
 
 | Layer | Technology |
 |---|---|
-| LLM | Claude 3.5 Sonnet via AWS Bedrock (APAC) |
+| LLM | Claude 3.5 Sonnet via AWS Bedrock (APAC cross-region) |
 | Browser automation | Playwright |
 | Test runner | @playwright/test |
 | Security scanning | OWASP ZAP (Docker) |
 | Accessibility | axe-core |
+| Load testing | k6 |
 | CI/CD | GitHub Actions |
+| Report hosting | Netlify (auto-deploy on every run) |
 | Infrastructure | Docker, Docker Compose |
-| Runtime | Node.js 20 |
+| Runtime | Node.js 22 |
 
 ---
 
@@ -147,9 +167,10 @@ The LLM orchestrates everything. Each skill (browse, generate, run, triage, scan
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - Docker (for ZAP security scanning)
-- AWS account with Bedrock access
+- AWS account with Bedrock access (Claude 3.5 Sonnet)
+- k6 (`brew install k6` on Mac)
 
 ### 1. Clone and install
 
@@ -172,53 +193,54 @@ Edit `.env`:
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_REGION=ap-south-1
+ZAP_API_KEY=qaagent123
+ZAP_PROXY_URL=http://localhost:8080
 ```
 
-### 3. Run the agent
+### 3. Start ZAP (for security scanning)
 
 ```bash
-# Functional tests + triage only (no Docker needed)
-node src/day3-test.js --url https://demo.playwright.dev/todomvc
-
-# Full run — functional + security + accessibility
-docker compose up -d   # start ZAP
-node src/agent.js --url https://your-app.com
+docker compose up -d
 ```
 
-### 4. View the report
+### 4. Run the agent
 
-Open `reports/qa-report-[timestamp].html` in your browser.
+```bash
+# Functional tests only (no Docker needed)
+node src/agent.js --url https://your-app.com --mode functional
+
+# Full run — functional + security + accessibility + load
+node src/agent.js --url https://your-app.com --mode full
+```
+
+### 5. View the report
+
+Open `reports/qa-report-*.html` in your browser, or view the latest CI report live at **[qa-agent-report.netlify.app](https://qa-agent-report.netlify.app/)**
 
 ---
 
-## CI/CD — runs on every PR
+## CI/CD pipeline
 
-The GitHub Actions pipeline runs the full agent on every pull request and uploads the HTML report as an artifact.
+The GitHub Actions pipeline runs the full agent on every push and PR. The HTML report is auto-deployed to Netlify and linked in the Actions job summary.
 
-```yaml
-# .github/workflows/qa-agent.yml
-on: [pull_request]
-jobs:
-  qa-agent:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-      - run: npm install && npx playwright install chromium
-      - run: node src/agent.js --url ${{ env.TARGET_URL }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: qa-report
-          path: reports/
 ```
+Every push / PR:
+  ✓ browse → generate → run → triage    (~2 min)
+  ✓ security passive scan via ZAP        (~1 min)
+  ✓ a11y axe-core WCAG 2.1 AA scan      (~30 sec)
+  ✓ load test k6 baseline               (~30 sec)
+  ✓ HTML report deployed to Netlify
+  ✓ Quality gate — blocks on critical findings
 
-PRs are blocked if the agent finds any **High** OWASP severity finding or **Critical** WCAG violation.
+Nightly at 2am IST:
+  Same pipeline — catches overnight regressions
+```
 
 ---
 
 ## OWASP Top 10 coverage
 
-| ID | Vulnerability | Detection method |
+| ID | Vulnerability | Detection |
 |---|---|---|
 | A01:2021 | Broken access control | LLM + Playwright IDOR probing |
 | A02:2021 | Cryptographic failures | ZAP passive — HTTP, weak ciphers |
@@ -228,40 +250,26 @@ PRs are blocked if the agent finds any **High** OWASP severity finding or **Crit
 | A06:2021 | Vulnerable components | LLM CVE cross-reference |
 | A07:2021 | Auth & session failures | ZAP active — session tokens |
 | A08:2021 | Software integrity failures | LLM — unsigned scripts |
-| A09:2021 | Logging & monitoring failures | Agent-triggered error probing |
+| A09:2021 | Logging failures | Agent-triggered error probing |
 | A10:2021 | SSRF | ZAP active + LLM payload crafting |
 
 ---
 
 ## The AI security analyst layer
 
-Raw ZAP output tells you _what_ was found. The LLM layer tells you _why it matters_.
-
-Every finding gets enriched with a plain-English risk narrative:
+Raw ZAP output tells you what was found. The LLM tells you why it matters.
 
 ```json
 {
   "owaspId": "A05:2021",
   "title": "Missing Content-Security-Policy header",
-  "riskNarrative": "Without a CSP header, an attacker who finds an XSS vector can inject
-                    arbitrary scripts that steal session tokens of any logged-in user.",
+  "riskNarrative": "Without a CSP header, an attacker who finds an XSS vector
+                    can inject arbitrary scripts that steal session tokens.",
   "exploitability": "Medium — requires a separate XSS entry point",
-  "remediation": "Add Content-Security-Policy: default-src 'self' to all HTTP responses",
-  "severity": "Medium"
+  "remediation": "Add Content-Security-Policy: default-src 'self' to all responses",
+  "severity": "medium"
 }
 ```
-
----
-
-## Why this project exists
-
-Most QA automation repos show you how to write Playwright tests. This one shows you what happens when the AI writes them, runs them, reads the failures, scans for security issues, checks accessibility, and files the bugs — autonomously.
-
-Built as a learning project to explore agentic QA engineering patterns:
-- LLM orchestration with the ReAct (Reason → Act → Observe) loop
-- MCP-style skill architecture for composable test capabilities
-- AI-augmented security testing on top of OWASP ZAP
-- Shift-left quality gates in CI/CD pipelines
 
 ---
 
@@ -269,22 +277,22 @@ Built as a learning project to explore agentic QA engineering patterns:
 
 | Day | Milestone | Status |
 |---|---|---|
-| Day 1 | AWS Bedrock + Claude API working | ✅ Done |
-| Day 2 | Playwright browse skill — agent navigates live app | ✅ Done |
-| Day 3 | AI test generation — 4/5 tests passing on first run | ✅ Done |
-| Day 4 | Failure triage skill | 🔄 In progress |
-| Day 5 | ReAct orchestrator loop | ⏳ Upcoming |
-| Day 6 | ZAP security skill | ⏳ Upcoming |
-| Day 7 | axe-core accessibility skill | ⏳ Upcoming |
-| Day 8 | Unified HTML report | ⏳ Upcoming |
-| Day 9 | GitHub Actions CI pipeline | ⏳ Upcoming |
-| Day 10 | Demo GIF + v1.0.0 release | ⏳ Upcoming |
+| Day 1 | AWS Bedrock + Claude API working | ✅ |
+| Day 2 | Playwright browse skill — agent navigates live app | ✅ |
+| Day 3 | AI test generation — tests passing on first run | ✅ |
+| Day 4 | Failure triage — AI root cause + severity | ✅ |
+| Day 5 | ReAct orchestrator — one command, autonomous pipeline | ✅ |
+| Day 6 | OWASP ZAP security skill — active scan + AI narratives | ✅ |
+| Day 7 | axe-core a11y + k6 load baseline — full 5-type coverage | ✅ |
+| Day 8 | Unified HTML report — quality gate + score cards | ✅ |
+| Day 9 | GitHub Actions CI + Netlify live deploy | ✅ |
+| Day 10 | v1.0.0 release | ✅ |
 
 ---
 
 ## Author
 
-**Divyendu Shukla** — Staff Software Engineer in Test  
+**Divyendu Shukla** — Staff Software Engineer in Test
 [divyendushukla.in](https://divyendushukla.in) · [LinkedIn](https://linkedin.com/in/divyendushukla) · [GitHub](https://github.com/divyendu13)
 
 ---
